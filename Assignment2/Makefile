@@ -1,2 +1,2 @@
 sample:		sample.cpp
-		g++ -o sample  sample.cpp  -lGL  -lGLU  /usr/lib/x86_64-linux-gnu/libglut.so.3  -lm
+		g++  -o  sample    sample.cpp    -lm  -framework  OpenGL  -framework  GLUT

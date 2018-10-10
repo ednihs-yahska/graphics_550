@@ -11,9 +11,9 @@
 #include "glew.h"
 #endif
 
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include "glut.h"
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
 
 #include "heli.550"
 
@@ -90,6 +90,9 @@ const char *GLUITITLE   = { "User Interface Window" };
 const int GLUITRUE  = { true  };
 const int GLUIFALSE = { false };
 
+//animation variables
+float Time;
+#define MS_IN_THE_ANIMATION_CYCLE	10000
 
 // the escape key:
 
@@ -224,6 +227,8 @@ int		WhichColor;				// index into Colors[ ]
 int		WhichProjection;		// ORTHO or PERSP
 int		Xmouse, Ymouse;			// mouse values
 float	Xrot, Yrot;				// rotation angles in degrees
+float   slowSpeed = 3;
+float   fastSpeed = slowSpeed * 3;
 
 
 // function prototypes:
@@ -314,10 +319,167 @@ Animate( )
 	// for Display( ) to find:
 
 	// force a call to Display( ) next time it is convenient:
+	int ms = glutGet( GLUT_ELAPSED_TIME );	// milliseconds
+	ms  %=  MS_IN_THE_ANIMATION_CYCLE;
+	Time = (float)ms  /  (float)MS_IN_THE_ANIMATION_CYCLE;        // [ 0., 1. )
 
 	glutSetWindow( MainWindow );
 	glutPostRedisplay( );
 }
+
+//Sphere
+
+struct xpoint {
+	float x, y, z;		// coordinates
+	float nx, ny, nz;	// surface normal
+	float s, t;		// texture coords
+};
+
+static int		NumLngs, NumLats;
+static struct xpoint *	Pts;
+
+inline struct xpoint *
+PtsPointer( int lat, int lng )
+{
+	if( lat < 0 )	lat += (NumLats-1);
+	if( lng < 0 )	lng += (NumLngs-1);
+	if( lat > NumLats-1 )	lat -= (NumLats-1);
+	if( lng > NumLngs-1 )	lng -= (NumLngs-1);
+	return &Pts[ NumLngs*lat + lng ];
+}
+
+
+
+inline void
+DrawPoint( struct xpoint *p )
+{
+	glNormal3f( p->nx, p->ny, p->nz );
+	glTexCoord2f( p->s, p->t );
+	glVertex3f( p->x, p->y, p->z );
+}
+
+void
+MjbSphere( float radius, int slices, int stacks )
+{
+	struct xpoint top, bot;		// top, bottom points
+	struct xpoint *p;
+
+	// set the globals:
+
+	NumLngs = slices;
+	NumLats = stacks;
+
+	if( NumLngs < 3 )
+		NumLngs = 3;
+
+	if( NumLats < 3 )
+		NumLats = 3;
+
+
+	// allocate the point data structure:
+
+	Pts = new struct xpoint[ NumLngs * NumLats ];
+
+
+	// fill the Pts structure:
+
+	for( int ilat = 0; ilat < NumLats; ilat++ )
+	{
+		float lat = -M_PI/2.  +  M_PI * (float)ilat / (float)(NumLats-1);
+		float xz = cos( lat );
+		float y = sin( lat );
+		for( int ilng = 0; ilng < NumLngs; ilng++ )
+		{
+			float lng = -M_PI  +  2. * M_PI * (float)ilng / (float)(NumLngs-1);
+			float x =  xz * cos( lng );
+			float z = -xz * sin( lng );
+			p = PtsPointer( ilat, ilng );
+			p->x  = radius * x;
+			p->y  = radius * y;
+			p->z  = radius * z;
+			p->nx = x;
+			p->ny = y;
+			p->nz = z;
+			p->s = ( lng + M_PI    ) / ( 2.*M_PI );
+			p->t = ( lat + M_PI/2. ) / M_PI;
+		}
+	}
+
+	top.x =  0.;		top.y  = radius;	top.z = 0.;
+	top.nx = 0.;		top.ny = 1.;		top.nz = 0.;
+	top.s  = 0.;		top.t  = 1.;
+
+	bot.x =  0.;		bot.y  = -radius;	bot.z = 0.;
+	bot.nx = 0.;		bot.ny = -1.;		bot.nz = 0.;
+	bot.s  = 0.;		bot.t  =  0.;
+
+
+	// connect the north pole to the latitude NumLats-2:
+
+	glBegin( GL_QUADS );
+	for( int ilng = 0; ilng < NumLngs-1; ilng++ )
+	{
+		p = PtsPointer( NumLats-1, ilng );
+		DrawPoint( p );
+
+		p = PtsPointer( NumLats-2, ilng );
+		DrawPoint( p );
+
+		p = PtsPointer( NumLats-2, ilng+1 );
+		DrawPoint( p );
+
+		p = PtsPointer( NumLats-1, ilng+1 );
+		DrawPoint( p );
+	}
+	glEnd( );
+
+	// connect the south pole to the latitude 1:
+
+	glBegin( GL_QUADS );
+	for( int ilng = 0; ilng < NumLngs-1; ilng++ )
+	{
+		p = PtsPointer( 0, ilng );
+		DrawPoint( p );
+
+		p = PtsPointer( 0, ilng+1 );
+		DrawPoint( p );
+
+		p = PtsPointer( 1, ilng+1 );
+		DrawPoint( p );
+
+		p = PtsPointer( 1, ilng );
+		DrawPoint( p );
+	}
+	glEnd( );
+
+
+	// connect the other 4-sided polygons:
+
+	glBegin( GL_QUADS );
+	for( int ilat = 2; ilat < NumLats-1; ilat++ )
+	{
+		for( int ilng = 0; ilng < NumLngs-1; ilng++ )
+		{
+			p = PtsPointer( ilat-1, ilng );
+			DrawPoint( p );
+
+			p = PtsPointer( ilat-1, ilng+1 );
+			DrawPoint( p );
+
+			p = PtsPointer( ilat, ilng+1 );
+			DrawPoint( p );
+
+			p = PtsPointer( ilat, ilng );
+			DrawPoint( p );
+		}
+	}
+	glEnd( );
+
+	delete [ ] Pts;
+	Pts = NULL;
+}
+
+// End of sphere
 
 
 // draw the complete scene:
@@ -435,15 +597,30 @@ Display( )
 	glCallList( HeliList );
 
 	glPushMatrix();
+	glTranslatef(0, 4, 0);
+	glRotatef(360*Time*fastSpeed, 0,1,0);
 	glRotatef(90, 1, 0, 0);
+	glScalef(3,3,3);
 	glCallList( BladeList );
 	glPopMatrix();
 
 	glPushMatrix();
-	glTranslatef(0,0,1);
+	glTranslatef(2,1,3);
+	glRotatef(360*Time*slowSpeed, 1,0,0);
 	glRotatef(90, 0, 1, 0);
 	glCallList( BladeList );
 	glPopMatrix();
+
+	for(int i=-50; i<=50;i+=2){
+		for(int j=-50;j<=50;j+=2){
+			if((i<-5 || i>5) || (j<-5 || j>5)){
+				glBegin(GL_LINES);
+					glVertex3f(i,j,-50);
+					glVertex3f(i,j, 50);
+				glEnd();
+			}
+		}
+	}
 
 	if( DepthFightingOn != 0 )
 	{
@@ -762,7 +939,7 @@ InitGraphics( )
 	glutTabletButtonFunc( NULL );
 	glutMenuStateFunc( NULL );
 	glutTimerFunc( -1, NULL, 0 );
-	glutIdleFunc( NULL );
+	glutIdleFunc( Animate );
 
 	// init glew (a window must be open to do this):
 
@@ -1239,3 +1416,5 @@ HsvRgb( float hsv[3], float rgb[3] )
 	rgb[1] = g;
 	rgb[2] = b;
 }
+
+
