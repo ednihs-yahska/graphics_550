@@ -11,9 +11,9 @@
 #include "glew.h"
 #endif
 
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#include <GLUT/glut.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include "glut.h"
 
 #include "heli.550"
 
@@ -229,6 +229,7 @@ int		Xmouse, Ymouse;			// mouse values
 float	Xrot, Yrot;				// rotation angles in degrees
 float   slowSpeed = 3;
 float   fastSpeed = slowSpeed * 3;
+float   view = 't';
 
 
 // function prototypes:
@@ -545,8 +546,11 @@ Display( )
 
 	// set the eye position, look-at position, and up-vector:
 
-	gluLookAt( 0., 0., 3.,     0., 0., 0.,     0., 1., 0. );
-
+	if(view=='f'){
+		gluLookAt( 2, 6., 11.,     0., 0., 0.,     0., 1., 0. );
+	} else {
+		gluLookAt( -0.4, 1.8, -4.95,     0., 0., -50.,     0., 1., 0. );
+	}
 
 	// rotate the scene:
 
@@ -597,26 +601,34 @@ Display( )
 	glCallList( HeliList );
 
 	glPushMatrix();
-	glTranslatef(0, 4, 0);
-	glRotatef(360*Time*fastSpeed, 0,1,0);
+	glTranslatef(0, 2.9, -2);
+	glRotatef(360*Time*slowSpeed, 0,-1,0);
 	glRotatef(90, 1, 0, 0);
-	glScalef(3,3,3);
+	glScalef(5,5,5);
 	glCallList( BladeList );
 	glPopMatrix();
 
 	glPushMatrix();
-	glTranslatef(2,1,3);
-	glRotatef(360*Time*slowSpeed, 1,0,0);
+	glTranslatef(0.5,2.5,9);
+	glRotatef(360*Time*fastSpeed, -1,0,0);
 	glRotatef(90, 0, 1, 0);
 	glCallList( BladeList );
+	glScalef(1.5,1.5,1.5);
 	glPopMatrix();
 
-	for(int i=-50; i<=50;i+=2){
-		for(int j=-50;j<=50;j+=2){
+	// char buffer[64];
+	// int ret = snprintf(buffer, sizeof buffer, "%f", 1/log(Time));
+
+	// char buffer2[64];
+	// int ret2 = snprintf(buffer2, sizeof buffer2, "%f", log(Time+1)*100);
+
+	for(int i=-50; i<=50;i+=5){
+		for(int j=-50;j<=50;j+=5){
 			if((i<-5 || i>5) || (j<-5 || j>5)){
+				glColor3f(0.68, 0.85, 0.9);
 				glBegin(GL_LINES);
-					glVertex3f(i,j,-50);
-					glVertex3f(i,j, 50);
+					//glVertex3f(i,j, -50-(1/log(Time*1.5)));
+					//glVertex3f(i,j, -45+log((Time*2+1))*100);
 				glEnd();
 			}
 		}
@@ -635,7 +647,7 @@ Display( )
 
 	glDisable( GL_DEPTH_TEST );
 	glColor3f( 0., 1., 1. );
-	DoRasterString( 0., 1., 0., "Text That Moves" );
+	DoRasterString( 0., 1., 0., "Text" );
 
 
 	// draw some gratuitous text that is fixed on the screen:
@@ -655,7 +667,7 @@ Display( )
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity( );
 	glColor3f( 1., 1., 1. );
-	DoRasterString( 5., 5., 0., "Text That Doesn't" );
+	DoRasterString( 5., 5., 0., "Text" );
 
 
 	// swap the double-buffered framebuffers:
@@ -1064,7 +1076,23 @@ Keyboard( unsigned char c, int x, int y )
 		case 'P':
 			WhichProjection = PERSP;
 			break;
-
+		case 'c':
+			if(view == 't'){
+				view = 'f';
+			} else {
+				view = 't';
+			}
+			break;
+		case GLUT_KEY_UP:
+			fprintf( stderr, "Keyboard UP: '%c' (0x%0x)\n", c, c );
+			fastSpeed = fastSpeed*1.5;
+			slowSpeed = slowSpeed*1.5;
+			break;
+		case GLUT_KEY_DOWN:
+			fprintf( stderr, "Keyboard Down: '%c' (0x%0x)\n", c, c );
+			fastSpeed = fastSpeed/1.5;
+			slowSpeed = slowSpeed/1.5;
+			break;
 		case 'q':
 		case 'Q':
 		case ESCAPE:
@@ -1135,7 +1163,7 @@ MouseMotion( int x, int y )
 	if( DebugOn != 0 )
 		fprintf( stderr, "MouseMotion: %d, %d\n", x, y );
 
-
+	if(view == 'f') return;
 	int dx = x - Xmouse;		// change in mouse coords
 	int dy = y - Ymouse;
 
