@@ -3,12 +3,13 @@ out vec3 vColor;
 out vec2 vST;
 out vec4 pos;
 uniform float uTime;
+uniform bool freezeVertex;
 
 void main() {
 	vST = gl_MultiTexCoord0.st;
 	vec4 pos = gl_Vertex;
 	float halfTime = 0.5;
-	if(uTime >= 0.1 && uTime <= 0.9){
+	if(uTime >= 0.07 && uTime <= 0.93){
 		if(uTime <= halfTime){
 			pos.y = pos.y + uTime*40;
 		}else {
@@ -58,6 +59,6 @@ void main() {
 			}	
 		}
 	}
-	vColor = pos.xyz;
+	vColor = vec3(pos.x+sin(uTime*50)+pos.y+sin(uTime*50)+pos.z+sin(uTime*50));
 	gl_Position = gl_ModelViewProjectionMatrix * pos;
 }
