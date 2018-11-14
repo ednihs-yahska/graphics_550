@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-
+#include <cstdlib>
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -190,6 +190,7 @@ float	Xrot, Yrot;				// rotation angles in degrees
 GLSLProgram *Pattern;
 float Time;
 const int MS_IN_THE_ANIMATION_CYCLE = 1000;
+bool freezeVertex = false;
 
 // function prototypes:
 
@@ -279,10 +280,11 @@ Animate()
 	// for Display( ) to find:
 
 	// force a call to Display( ) next time it is convenient:
-
-	int ms = glutGet(GLUT_ELAPSED_TIME);
-	ms %= MS_IN_THE_ANIMATION_CYCLE;
-	Time = (float)ms / (float)MS_IN_THE_ANIMATION_CYCLE;
+	if (!freezeVertex) {
+		int ms = glutGet(GLUT_ELAPSED_TIME);
+		ms %= MS_IN_THE_ANIMATION_CYCLE;
+		Time = (float)ms / (float)MS_IN_THE_ANIMATION_CYCLE;
+	}
 	glutSetWindow(MainWindow);
 	glutPostRedisplay();
 }
@@ -351,7 +353,7 @@ Display()
 
 	// set the eye position, look-at position, and up-vector:
 
-	gluLookAt(0., 0., 30., 0., 0., 0., 0., 1., 0.);
+	gluLookAt(0., -10., 30., 0., 0., 0., -1., 1., 0.);
 
 
 	// rotate the scene:
@@ -398,9 +400,11 @@ Display()
 	glEnable(GL_NORMALIZE);
 
 	float S0 = 0.5, T0 = 0.5, uSize = 1;
+
 	// draw the current object:
 	Pattern->Use();
 	Pattern->SetUniformVariable("uTime", Time);
+	Pattern->SetUniformVariable("freezeVertex", freezeVertex);
 	Pattern->SetAttributeVariable("uS0", S0);
 	Pattern->SetAttributeVariable("uT0", T0);
 	Pattern->SetAttributeVariable("uSize", uSize);
@@ -798,6 +802,8 @@ Keyboard(unsigned char c, int x, int y)
 	case 'P':
 		WhichProjection = PERSP;
 		break;
+	case 'V':
+		freezeVertex = !freezeVertex;
 
 	case 'q':
 	case 'Q':
