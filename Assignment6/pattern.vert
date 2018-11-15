@@ -2,63 +2,63 @@
 out vec3 vColor;
 out vec2 vST;
 out vec4 pos;
-uniform float uTime;
+uniform float uTimeV;
 uniform bool freezeVertex;
 
 void main() {
 	vST = gl_MultiTexCoord0.st;
 	vec4 pos = gl_Vertex;
 	float halfTime = 0.5;
-	if(uTime >= 0.07 && uTime <= 0.93){
-		if(uTime <= halfTime){
-			pos.y = pos.y + uTime*40;
+	if(uTimeV >= 0.07 && uTimeV <= 0.93){
+		if(uTimeV <= halfTime){
+			pos.y = pos.y + uTimeV*40;
 		}else {
-			pos.y = (pos.y + (1-uTime)*40);
+			pos.y = (pos.y + (1-uTimeV)*40);
 		}
 	}
-	if(uTime < 0.1 || uTime > 0.9){
+	if(uTimeV < 0.1 || uTimeV > 0.9){
 		float scaleFactor = 1.5;
-		if(uTime < 0.1) {
-			if(uTime < 0.05){
-				float fx = uTime * 2;
+		if(uTimeV < 0.1) {
+			if(uTimeV < 0.05){
+				float fx = uTimeV * 2;
 				pos.x = pos.x*(scaleFactor-scaleFactor*fx);
 			}else{
-				float fx = uTime * 2;
+				float fx = uTimeV * 2;
 				pos.x = pos.x*(scaleFactor-scaleFactor*fx);
 			}
 		}else{
-			if(uTime > 0.95){
-				float fx = (uTime-0.9) * 2;
+			if(uTimeV > 0.95){
+				float fx = (uTimeV-0.9) * 2;
 				pos.x = pos.x*(scaleFactor+scaleFactor*fx);
 			}else{
-				float fx = (uTime-0.9) * 2;
+				float fx = (uTimeV-0.9) * 2;
 				pos.x = pos.x*(scaleFactor+scaleFactor*fx);
 			}
 		}
 		
 	}
-	if((uTime >= 0.1 && uTime < 0.2) || (uTime <= 0.9 && uTime > 0.8 )){
+	if((uTimeV >= 0.1 && uTimeV < 0.2) || (uTimeV <= 0.9 && uTimeV > 0.8 )){
 		float scaleFactor = 1.4;
-		if(!(uTime <= 0.9 && uTime > 0.8 )){
-			if(uTime >= 0.15){
-				float fy = (uTime - 0.1)*2;
+		if(!(uTimeV <= 0.9 && uTimeV > 0.8 )){
+			if(uTimeV >= 0.15){
+				float fy = (uTimeV - 0.1)*2;
 				pos.y = pos.y*(scaleFactor-scaleFactor*fy);
 			} else {
-				float fy = (uTime - 0.1)*2;
+				float fy = (uTimeV - 0.1)*2;
 				pos.y = pos.y*(scaleFactor+scaleFactor*fy);
 			}
 		}
 		
-		if(!(uTime >= 0.1 && uTime < 0.2)){
-			if(uTime <= 0.85){
-				float fy = (uTime - 0.8)*2;
+		if(!(uTimeV >= 0.1 && uTimeV < 0.2)){
+			if(uTimeV <= 0.85){
+				float fy = (uTimeV - 0.8)*2;
 				pos.y = pos.y*(scaleFactor+scaleFactor*fy);
 			} else {
-				float fy = (uTime - 0.8)*2;
+				float fy = (uTimeV - 0.8)*2;
 				pos.y = pos.y*(scaleFactor-scaleFactor*fy);
 			}	
 		}
 	}
-	vColor = vec3(pos.x+sin(uTime*50)+pos.y+sin(uTime*50)+pos.z+sin(uTime*50));
+	vColor = vec3(pos.x+sin(uTimeV*50)+pos.y+sin(uTimeV*50)+pos.z+sin(uTimeV*50));
 	gl_Position = gl_ModelViewProjectionMatrix * pos;
 }
