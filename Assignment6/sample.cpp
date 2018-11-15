@@ -188,9 +188,9 @@ int		WhichProjection;		// ORTHO or PERSP
 int		Xmouse, Ymouse;			// mouse values
 float	Xrot, Yrot;				// rotation angles in degrees
 GLSLProgram *Pattern;
-float Time;
+float Time, Time2;
 const int MS_IN_THE_ANIMATION_CYCLE = 1000;
-bool freezeVertex = false;
+bool freezeVertex = false, freezeFragment = false, freezeBoth = false, frontLook =false;
 
 // function prototypes:
 
@@ -280,10 +280,13 @@ Animate()
 	// for Display( ) to find:
 
 	// force a call to Display( ) next time it is convenient:
-	if (!freezeVertex) {
-		int ms = glutGet(GLUT_ELAPSED_TIME);
-		ms %= MS_IN_THE_ANIMATION_CYCLE;
+	int ms = glutGet(GLUT_ELAPSED_TIME);
+	ms %= MS_IN_THE_ANIMATION_CYCLE;
+	if (!freezeVertex && !freezeBoth) {
 		Time = (float)ms / (float)MS_IN_THE_ANIMATION_CYCLE;
+	}
+	if (!freezeFragment && !freezeBoth) {
+		Time2 = (float)ms / (float)MS_IN_THE_ANIMATION_CYCLE;
 	}
 	glutSetWindow(MainWindow);
 	glutPostRedisplay();
@@ -353,7 +356,10 @@ Display()
 
 	// set the eye position, look-at position, and up-vector:
 
-	gluLookAt(0., -10., 30., 0., 0., 0., -1., 1., 0.);
+	if(!frontLook)
+		gluLookAt(0., -10., 30., 0., 0., 0., -1., 1., 0.);
+	else
+		gluLookAt(0., 10., 30., 0., 0., 0., 0., 1., 0.);
 
 
 	// rotate the scene:
@@ -403,7 +409,8 @@ Display()
 
 	// draw the current object:
 	Pattern->Use();
-	Pattern->SetUniformVariable("uTime", Time);
+	Pattern->SetUniformVariable("uTimeV", Time);
+	Pattern->SetUniformVariable("uTimeF", Time2);
 	Pattern->SetUniformVariable("freezeVertex", freezeVertex);
 	Pattern->SetAttributeVariable("uS0", S0);
 	Pattern->SetAttributeVariable("uT0", T0);
@@ -804,7 +811,21 @@ Keyboard(unsigned char c, int x, int y)
 		break;
 	case 'V':
 		freezeVertex = !freezeVertex;
-
+		break;
+	case 'b':
+		freezeBoth = false;
+		freezeVertex = false;
+		freezeFragment = false;
+		break;
+	case 'f':
+		freezeBoth = true;
+		break;
+	case 'F':
+		freezeFragment = true;
+		break;
+	case 'c':
+		frontLook = !frontLook;
+		break;
 	case 'q':
 	case 'Q':
 	case ESCAPE:
